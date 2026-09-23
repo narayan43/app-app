@@ -62,6 +62,8 @@ fun PaperTearHeader(
     onOpenSettings: () -> Unit,
     isDefaultLauncher: Boolean,
     onSetDefaultLauncher: () -> Unit,
+    activeLetterFilter: Char? = null,
+    onResetToAllApps: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var currentTime by remember { mutableStateOf("") }
@@ -129,6 +131,36 @@ fun PaperTearHeader(
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (activeLetterFilter != null && activeLetterFilter != '*') {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFF2A2A30),
+                            modifier = Modifier
+                                .clickable { onResetToAllApps() }
+                                .padding(end = 6.dp)
+                                .testTag("reset_letter_filter_badge")
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            ) {
+                                Text(
+                                    text = "$activeLetterFilter",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(
+                                    imageVector = Icons.Rounded.Close,
+                                    contentDescription = "Show All Apps",
+                                    tint = Color(0xFFAAAAAA),
+                                    modifier = Modifier.size(12.dp)
+                                )
+                            }
+                        }
+                    }
+
                     IconButton(
                         onClick = { onToggleSearch(!isSearchActive) },
                         modifier = Modifier.size(36.dp).testTag("search_toggle_button")

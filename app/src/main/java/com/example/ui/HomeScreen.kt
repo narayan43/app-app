@@ -246,6 +246,8 @@ fun HomeScreen(
                     onOpenSettings = { viewModel.openSettings() },
                     isDefaultLauncher = isDefaultLauncher,
                     onSetDefaultLauncher = { viewModel.requestDefaultLauncher(context) },
+                    activeLetterFilter = activeLetterFilter,
+                    onResetToAllApps = { viewModel.selectLetterFilter('*') },
                     modifier = Modifier.onGloballyPositioned { coordinates ->
                         headerHeightPx = coordinates.size.height.toFloat()
                     }
@@ -292,49 +294,67 @@ fun HomeScreen(
                             .weight(1f)
                             .testTag("apps_lazy_list")
                     ) {
-                        val isAtHome = (activeLetterFilter == null || activeLetterFilter == '*') && searchQuery.isEmpty()
-
-                        // Home Screen View: Show Pinned / Favorite Apps (clean & uncluttered)
-                        if (isAtHome) {
-                            if (pinnedApps.isNotEmpty()) {
-                                itemsIndexed(
-                                    items = pinnedApps,
-                                    key = { _, app -> "home_pinned_${app.packageName}" }
-                                ) { _, app ->
-                                    AppListItem(
-                                        app = app,
-                                        isMonochrome = preferences.monochromeIcons,
-                                        onClick = { viewModel.launchApp(app) },
-                                        onLongClick = { viewModel.openAppOptions(app) },
-                                        modifier = Modifier.testTag("app_item_${app.packageName}")
-                                    )
-                                }
+                        // Pinned Favorites section (if any)
+                        if (pinnedApps.isNotEmpty() && searchQuery.isEmpty()) {
+                            item(key = "header_favorites") {
+                                Text(
+                                    text = "FAVORITES",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = fluidColor,
+                                    letterSpacing = 1.sp,
+                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
+                                )
                             }
-                        } else {
-                            // Letter Filtered View (e.g. user scrolled to 'G' or 'V' or searched)
-                            if (searchQuery.isEmpty() && activeLetterFilter != null && activeLetterFilter != '*') {
-                                item(key = "header_selected_letter") {
-                                    Text(
-                                        text = activeLetterFilter.toString(),
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White,
-                                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-                                    )
-                                }
+                            itemsIndexed(
+                                items = pinnedApps,
+                                key = { _, app -> "home_pinned_${app.packageName}" }
+                            ) { _, app ->
+                                AppListItem(
+                                    app = app,
+                                    isMonochrome = preferences.monochromeIcons,
+                                    onClick = { viewModel.launchApp(app) },
+                                    onLongClick = { viewModel.openAppOptions(app) },
+                                    modifier = Modifier.testTag("app_item_${app.packageName}")
+                                )
                             }
+                        }
 
-                            for (i in filteredApps.indices) {
-                                val app = filteredApps[i]
-                                item(key = "app_${app.packageName}") {
-                                    AppListItem(
-                                        app = app,
-                                        isMonochrome = preferences.monochromeIcons,
-                                        onClick = { viewModel.launchApp(app) },
-                                        onLongClick = { viewModel.openAppOptions(app) },
-                                        modifier = Modifier.testTag("app_item_${app.packageName}")
-                                    )
-                                }
+                        // Section header when a specific letter is filtered
+                        if (searchQuery.isEmpty() && activeLetterFilter != null && activeLetterFilter != '*') {
+                            item(key = "header_selected_letter") {
+                                Text(
+                                    text = activeLetterFilter.toString(),
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                                )
+                            }
+                        } else if (pinnedApps.isNotEmpty() && searchQuery.isEmpty() && filteredApps.isNotEmpty()) {
+                            item(key = "header_all_apps") {
+                                Text(
+                                    text = "ALL APPS",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF888888),
+                                    letterSpacing = 1.sp,
+                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                                )
+                            }
+                        }
+
+                        // Display all apps (or search / letter filtered list)
+                        for (i in filteredApps.indices) {
+                            val app = filteredApps[i]
+                            item(key = "app_${app.packageName}") {
+                                AppListItem(
+                                    app = app,
+                                    isMonochrome = preferences.monochromeIcons,
+                                    onClick = { viewModel.launchApp(app) },
+                                    onLongClick = { viewModel.openAppOptions(app) },
+                                    modifier = Modifier.testTag("app_item_${app.packageName}")
+                                )
                             }
                         }
 

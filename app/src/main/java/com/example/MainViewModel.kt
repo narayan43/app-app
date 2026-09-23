@@ -78,8 +78,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         it.packageName.lowercase().contains(queryTrimmed)
             }
         } else if (letterFilter == null || letterFilter == '*') {
-            // Home screen default state: only show pinned favorites
-            emptyList()
+            // Show all installed apps ordered alphabetically so the user sees everything immediately
+            mapped
         } else if (letterFilter == '#') {
             mapped.filter { !it.firstChar.isLetter() }
         } else {
