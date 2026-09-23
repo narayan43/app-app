@@ -1,0 +1,6 @@
+{
+  "name": "Flow Launcher",
+  "description": "A minimalist Android home launcher featuring a fluid liquid alphabet interaction and clean typography.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

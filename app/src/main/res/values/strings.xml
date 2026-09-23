@@ -1,0 +1,37 @@
+<resources>
+    <string name="app_name">Flow Launcher</string>
+    <string name="default_launcher_prompt">Set as Default Launcher</string>
+    <string name="search_apps_placeholder">Search applications…</string>
+    <string name="no_apps_found">No applications found</string>
+    <string name="settings_title">Settings</string>
+    <string name="theme_title">Theme</string>
+    <string name="theme_dark">Dark (OLED Black)</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_system">System Default</string>
+    <string name="alphabet_position">Alphabet Rail Position</string>
+    <string name="position_right">Right Side</string>
+    <string name="position_left">Left Side</string>
+    <string name="fluid_intensity">Fluid Wave Intensity</string>
+    <string name="intensity_low">Subtle</string>
+    <string name="intensity_medium">Balanced</string>
+    <string name="intensity_high">Dynamic</string>
+    <string name="fluid_color">Fluid Highlight Color</string>
+    <string name="haptics_label">Haptic Feedback</string>
+    <string name="haptics_desc">Subtle vibration when sliding over letters</string>
+    <string name="show_clock">Show Clock</string>
+    <string name="show_date">Show Date</string>
+    <string name="icon_monochrome">Monochrome Icons</string>
+    <string name="icon_monochrome_desc">Render app icons in minimalist monochrome</string>
+    <string name="paper_tear_style">Header Accent Style</string>
+    <string name="paper_tear_paper">Paper Tear Edge</string>
+    <string name="paper_tear_minimal">Minimal Wave</string>
+    <string name="paper_tear_none">Clean / None</string>
+    <string name="favorites_header">Pinned Apps</string>
+    <string name="app_info">App Info</string>
+    <string name="app_uninstall">Uninstall</string>
+    <string name="app_pin">Pin to Top</string>
+    <string name="app_unpin">Unpin</string>
+    <string name="onboarding_title">Meet Flow Launcher</string>
+    <string name="onboarding_subtitle">Swipe vertically anywhere to glide through your apps with the fluid alphabet.</string>
+    <string name="onboarding_cta">Get Started</string>
+</resources>

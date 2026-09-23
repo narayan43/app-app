@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="/manifest.json">
+  <title>Flow Launcher - Android Fluid Minimalist Launcher</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      background-color: #000000;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    #phone-container {
+      width: 100vw;
+      height: 100vh;
+      max-width: 420px;
+      max-height: 880px;
+      background-color: #000000; /* Pure OLED Black - LEDs switched completely off */
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.9);
+      border-radius: 0;
+    }
+    @media (min-width: 500px) {
+      #phone-container {
+        border-radius: 38px;
+        border: 2px solid #222226;
+        height: 94vh;
+      }
+    }
+
+    /* Full-screen diagonal paper tear canvas */
+    #paper-tear-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Status bar */
+    .status-bar {
+      height: 38px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 22px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #e0e0e0;
+      z-index: 10;
+    }
+    .status-bar-icons {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+    }
+
+    /* Header Container */
+    .header-card {
+      position: relative;
+      padding: 10px 24px 8px 24px;
+      z-index: 10;
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .default-pill {
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+    }
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+    .icon-btn {
+      background: none;
+      border: none;
+      color: #cccccc;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      border-radius: 50%;
+      transition: color 0.2s;
+    }
+    .icon-btn:hover {
+      color: #ffffff;
+    }
+
+    /* Stylized Day & Circle Clock (Screenshot 1) */
+    .stylized-clock-container {
+      display: flex;
+      align-items: center;
+      margin-top: 14px;
+      margin-bottom: 8px;
+      gap: 12px;
+      cursor: pointer;
+    }
+    .stylized-letter {
+      font-size: 38px;
+      font-weight: 200;
+      letter-spacing: 2px;
+      color: #ffffff;
+      line-height: 1;
+    }
+    .clock-circle {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 2px solid #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+      letter-spacing: 0.5px;
+    }
+
+    /* Search box */
+    .search-container {
+      margin-top: 10px;
+      display: none;
+    }
+    .search-container.active {
+      display: block;
+    }
+    .search-input {
+      width: 100%;
+      background: #000000;
+      border: 1px solid #222226;
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+
+    /* Main Scrollable App List */
+    .app-list-container {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 0 24px 60px 24px;
+      z-index: 5;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .app-list-container::-webkit-scrollbar {
+      display: none;
+    }
+
+    .section-header {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #ffffff;
+      padding: 16px 0 8px 0;
+    }
+    .section-header.pinned {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: #77777a;
+      padding-top: 8px;
+    }
+
+    /* Minimalist Black and White Outline App Item (Screenshot 1, 2, 3) */
+    .app-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 11px 0;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      border-radius: 8px;
+    }
+    .app-item:active {
+      transform: scale(0.98);
+      opacity: 0.8;
+    }
+
+    /* Pure White Minimal Outline Icon */
+    .app-icon {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: #ffffff;
+    }
+    .app-icon svg {
+      width: 100%;
+      height: 100%;
+      stroke: #ffffff;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .app-title {
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: 0.2px;
+      color: #f0f0f0;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pin-badge {
+      font-size: 12px;
+      opacity: 0.5;
+    }
+
+    /* Fluid Liquid Alphabet Canvas */
+    #fluid-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(4px);
+      z-index: 50;
+      display: none;
+      align-items: flex-end;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .bottom-sheet {
+      width: 100%;
+      background: #000000;
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
+      padding: 20px 24px 34px 24px;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.9);
+      max-height: 80vh;
+      overflow-y: auto;
+      border-top: 1px solid #222226;
+    }
+    .sheet-handle {
+      width: 40px;
+      height: 4px;
+      background: #444;
+      border-radius: 2px;
+      margin: 0 auto 16px auto;
+    }
+    .sheet-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #fff;
+    }
+    .action-btn {
+      width: 100%;
+      padding: 13px;
+      border-radius: 12px;
+      border: none;
+      background: #ffffff;
+      color: #000;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    .action-btn.secondary {
+      background: #000000;
+      color: #fff;
+      border: 1px solid #222226;
+    }
+
+    .setting-group {
+      margin-bottom: 18px;
+    }
+    .setting-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #8e8e93;
+      margin-bottom: 8px;
+    }
+    .pills-row {
+      display: flex;
+      gap: 8px;
+    }
+    .pill {
+      flex: 1;
+      height: 38px;
+      background: #0a0a0c;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: #888;
+      cursor: pointer;
+      border: 1px solid #1e1e22;
+      transition: all 0.2s;
+    }
+    .pill.active {
+      background: #18181c;
+      color: #fff;
+      border-color: #ffffff;
+      font-weight: 600;
+    }
+
+    /* Toast notification */
+    .toast {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1c1c1f;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      border: 1px solid #333;
+      z-index: 100;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div id="phone-container">
+    <!-- Diagonal Paper Tear Wallpaper Canvas -->
+    <canvas id="paper-tear-bg"></canvas>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span id="sb-time">15:45</span>
+      <div class="status-bar-icons">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C7.03 3 2.8 5.6 0 9.5L12 24 24 9.5C21.2 5.6 16.97 3 12 3z"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+      </div>
+    </div>
+
+    <!-- Paper Tear Header -->
+    <div class="header-card" id="header-card">
+      <div class="header-top">
+        <div class="default-pill" id="btn-default-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+          <span>Flow Launcher</span>
+        </div>
+        <div class="header-actions">
+          <button class="icon-btn" id="btn-search" title="Search Apps">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
+          <button class="icon-btn" id="btn-settings" title="Settings">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="search-container" id="search-box">
+        <input type="text" class="search-input" id="search-input" placeholder="Search apps…">
+      </div>
+
+      <!-- Stylized Day & Circle Clock Widget (Screenshot 1) -->
+      <div class="stylized-clock-container" id="clock-container">
+        <span class="stylized-letter" id="day-first-letter">M</span>
+        <div class="clock-circle" id="clock-circle-text">15:45</div>
+        <span class="stylized-letter" id="day-last-letter">N</span>
+      </div>
+    </div>
+
+    <!-- Scrollable Apps List -->
+    <div class="app-list-container" id="app-list"></div>
+
+    <!-- Fluid Alphabet Overlay Canvas (Shorter Height + Magnifying Lens Bubble) -->
+    <canvas id="fluid-canvas"></canvas>
+
+    <!-- Settings Bottom Sheet -->
+    <div class="modal-overlay" id="settings-modal">
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Flow Settings</div>
+
+        <button class="action-btn" id="btn-set-default">Set as Default Launcher</button>
+
+        <div class="setting-group">
+          <div class="setting-label">Wallpaper Style</div>
+          <div class="pills-row" id="pills-wallpaper">
+            <div class="pill active" data-style="black">Pure OLED Black</div>
+            <div class="pill" data-style="paper">Torn Paper</div>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <div class="setting-label">Slide Bar Height</div>
+          <div class="pills-row" id="pills-height">
+            <div class="pill active" data-height="compact">Shorter (Thumb)</div>
+            <div class="pill" data-height="standard">Standard</div>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <div class="setting-label">Fluid Wave Intensity</div>
+          <div class="pills-row" id="pills-intensity">
+            <div class="pill" data-intensity="low">Subtle</div>
+            <div class="pill active" data-intensity="medium">Balanced</div>
+            <div class="pill" data-intensity="high">Dynamic</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 16px; padding: 12px; border-radius: 12px; background: #111114; border: 1px solid #222228; text-align: left;">
+          <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span style="font-weight: 600; font-size: 13px; color: #ffffff;">Flow Launcher</span>
+            <span style="font-size: 11px; color: #888890;">v1.0 (Build 1)</span>
+          </div>
+          <div style="font-size: 11px; color: #9999a2; line-height: 1.4;">
+            Direct In-Place Updates Active: When updating, simply install the newer version directly over this app. No need to uninstall — your pinned apps and settings stay preserved.
+          </div>
+        </div>
+
+        <button class="action-btn secondary" id="btn-close-settings" style="margin-top: 14px;">Done</button>
+      </div>
+    </div>
+
+    <!-- App Options Modal -->
+    <div class="modal-overlay" id="app-modal">
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title" id="app-modal-title">App Options</div>
+        <button class="action-btn" id="btn-pin-app">Pin to Top</button>
+        <button class="action-btn secondary" id="btn-app-info">App Info</button>
+        <button class="action-btn secondary" id="btn-uninstall-app" style="color:#ff5252">Uninstall</button>
+        <button class="action-btn secondary" id="btn-close-app-modal">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">App Launched</div>
+  </div>
+
+  <script>
+    // Audio Context for subtle tactile letter ticks
+    let audioCtx = null;
+    function playHapticTick() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(320, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(160, audioCtx.currentTime + 0.025);
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.025);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.025);
+      } catch(e) {}
+    }
+
+    // SVG Line-Art Outline Icons (Pure White Minimal Outline)
+    const ICONS_SVG = {
+      whatsapp: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M7.5 16.5 L6 20.5 L10.5 19"/><path d="M10 10c0 2 1.5 3.5 3.5 3.5"/></svg>`,
+      facebook: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M14 8.5c-1 0-1.8.8-1.8 1.8V19m-2-5.5h4"/></svg>`,
+      youtube: `<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="3.5"/><polygon points="10,9 15.5,12 10,15"/></svg>`,
+      chrome: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="8" x2="21" y2="8"/><line x1="15.5" y1="14" x2="10.5" y2="21.5"/><line x1="8.5" y1="14" x2="3.5" y2="10.5"/></svg>`,
+      pinterest: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M11 8.5h2a2.5 2.5 0 0 1 0 5h-2v5.5"/></svg>`,
+      mahjong: `<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2.5"/><line x1="12" y1="7" x2="12" y2="17"/><circle cx="12" cy="12" r="2.5"/></svg>`,
+      recorder: `<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="3"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="16" y1="10" x2="16" y2="14"/></svg>`,
+      farmheroes: `<svg viewBox="0 0 24 24"><circle cx="8" cy="14" r="4.5"/><circle cx="16" cy="14" r="4.5"/><circle cx="12" cy="8" r="4.5"/></svg>`,
+      find: `<svg viewBox="0 0 24 24"><path d="M12 21c-4.5-4.5-6.5-7.5-6.5-10.5a6.5 6.5 0 1 1 13 0c0 3-2 6-6.5 10.5z"/><circle cx="12" cy="10.5" r="2.5"/></svg>`,
+      camera: `<svg viewBox="0 0 24 24"><path d="M4 8h3.5l1.5-2.5h6l1.5 2.5H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z"/><circle cx="12" cy="13.5" r="3.5"/></svg>`,
+      gallery: `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><polyline points="4 16 9 11 14 16 17 13 20 16"/><circle cx="16" cy="8.5" r="1.5"/></svg>`,
+      settings: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
+      music: `<svg viewBox="0 0 24 24"><circle cx="8" cy="17" r="3"/><circle cx="18" cy="15" r="3"/><path d="M11 17V6l10-2v11"/></svg>`,
+      messages: `<svg viewBox="0 0 24 24"><path d="M4 6h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H8l-5 3.5V8a2 2 0 0 1 2-2z"/></svg>`,
+      phone: `<svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>`,
+      generic: `<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><line x1="9" y1="12" x2="15" y2="12"/></svg>`
+    };
+
+    // Apps list matching screenshot and common Android apps
+    const APPS_DATA = [
+      { name: "WhatsApp", pkg: "com.whatsapp", iconKey: "whatsapp", isPinned: true },
+      { name: "Facebook", pkg: "com.facebook.katana", iconKey: "facebook", isPinned: true },
+      { name: "YouTube", pkg: "com.google.android.youtube", iconKey: "youtube", isPinned: true },
+      { name: "Chrome", pkg: "com.android.chrome", iconKey: "chrome", isPinned: true },
+      { name: "Pinterest", pkg: "com.pinterest", iconKey: "pinterest", isPinned: true },
+      { name: "Browser", pkg: "com.android.browser", iconKey: "chrome" },
+      { name: "Calculator", pkg: "com.google.android.calculator", iconKey: "generic" },
+      { name: "Calendar", pkg: "com.google.android.calendar", iconKey: "generic" },
+      { name: "Camera", pkg: "com.android.camera2", iconKey: "camera" },
+      { name: "Contacts", pkg: "com.google.android.contacts", iconKey: "generic" },
+      { name: "Farm Heroes Saga", pkg: "com.king.farmheroessaga", iconKey: "farmheroes" },
+      { name: "Find", pkg: "com.google.android.apps.find", iconKey: "find" },
+      { name: "Gallery", pkg: "com.google.android.apps.photos", iconKey: "gallery" },
+      { name: "Gmail", pkg: "com.google.android.gm", iconKey: "messages" },
+      { name: "Messages", pkg: "com.google.android.apps.messaging", iconKey: "messages" },
+      { name: "Music", pkg: "com.google.android.music", iconKey: "music" },
+      { name: "Phone", pkg: "com.google.android.dialer", iconKey: "phone" },
+      { name: "Settings", pkg: "com.android.settings", iconKey: "settings" },
+      { name: "Vita Mahjong", pkg: "com.vita.mahjong", iconKey: "mahjong" },
+      { name: "Voice Recorder", pkg: "com.google.android.apps.recorder", iconKey: "recorder" }
+    ];
+
+    // Alphabet items: Star + A..Z + Dot
+    const ALPHABET_ITEMS = ['★', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''), '•'];
+
+    // Launcher Settings
+    const settings = {
+      wallpaperStyle: 'black', // Pure OLED Black by default (all sky blue / paper removed)
+      railHeight: 'compact',   // 'compact' (shorter, thumb friendly) or 'standard'
+      intensity: 'medium',
+      pinned: ['com.whatsapp', 'com.facebook.katana', 'com.google.android.youtube', 'com.android.chrome', 'com.pinterest']
+    };
+
+    let selectedApp = null;
+    let searchQuery = '';
+    // Current letter filter: '★' means home favorites, 'A'..'Z' means only apps starting with that letter
+    let currentSelectedLetter = '★';
+
+    const container = document.getElementById('phone-container');
+    const appList = document.getElementById('app-list');
+    const canvas = document.getElementById('fluid-canvas');
+    const ctx = canvas.getContext('2d');
+    const bgCanvas = document.getElementById('paper-tear-bg');
+    const bgCtx = bgCanvas.getContext('2d');
+    const toast = document.getElementById('toast');
+    const sbTime = document.getElementById('sb-time');
+    const clockCircleText = document.getElementById('clock-circle-text');
+    const dayFirstLetter = document.getElementById('day-first-letter');
+    const dayLastLetter = document.getElementById('day-last-letter');
+    const searchBox = document.getElementById('search-box');
+    const searchInput = document.getElementById('search-input');
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    // Live Clock Update (e.g., "M [ 15:45 ] N" from Screenshot 1)
+    function updateClock() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const timeStr = `${h}:${m}`;
+      clockCircleText.textContent = timeStr;
+      sbTime.textContent = timeStr;
+
+      const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+      const dayStr = dayNames[now.getDay()];
+      dayFirstLetter.textContent = dayStr[0];
+      dayLastLetter.textContent = dayStr[2] || dayStr[1];
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Render Full-Screen Diagonal Paper Tear Background
+    function renderBackground() {
+      const rect = container.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+      bgCanvas.width = w * window.devicePixelRatio;
+      bgCanvas.height = h * window.devicePixelRatio;
+      bgCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      bgCtx.clearRect(0, 0, w, h);
+
+      // 1. Pure OLED Black base (LEDs completely turned off)
+      bgCtx.fillStyle = '#000000';
+      bgCtx.fillRect(0, 0, w, h);
+
+      if (settings.wallpaperStyle !== 'paper') return;
+
+      // 2. Diagonal Paper Tear (cutting from bottom-left up to middle-right)
+      const startY = h * 0.74;
+      const endY = h * 0.36;
+      const steps = 44;
+
+      const jitterOffsets = [
+        -3.5, 2.0, -5.0, 3.2, -1.8, 4.5, -6.0, 1.2, 4.0, -3.2,
+        -6.8, 2.5, -1.2, 3.8, -4.2, 5.5, -3.0, 0.5, 3.2, -4.8,
+        2.2, -5.8, 3.0, -2.2, 4.2, -4.8, 1.5, -3.8, 5.2, -1.8,
+        -5.5, 2.8, -1.5, 4.2, -3.2, 2.0, -4.8, 3.8, -2.0, 0.8,
+        -3.2, 4.0, -2.5, 1.8
+      ];
+
+      const edgePoints = [];
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const x = t * w;
+        const baseY = startY + t * (endY - startY);
+        const jitter = jitterOffsets[i % jitterOffsets.length];
+        edgePoints.push({ x, y: baseY + jitter });
+      }
+
+      // Draw Paper Sheet (Slate Blue / Gray Paper from Screenshot 1 & 2)
+      bgCtx.save();
+      bgCtx.beginPath();
+      bgCtx.moveTo(edgePoints[0].x, edgePoints[0].y);
+      for (let i = 1; i < edgePoints.length; i++) {
+        bgCtx.lineTo(edgePoints[i].x, edgePoints[i].y);
+      }
+      bgCtx.lineTo(w, h);
+      bgCtx.lineTo(0, h);
+      bgCtx.closePath();
+
+      // Soft paper gradient
+      const paperGrad = bgCtx.createLinearGradient(0, startY, w, endY);
+      paperGrad.addColorStop(0, '#8fa5b6');
+      paperGrad.addColorStop(0.5, '#a6bac8');
+      paperGrad.addColorStop(1, '#b8c9d6');
+      bgCtx.fillStyle = paperGrad;
+      bgCtx.fill();
+
+      // Soft Drop Shadow right under the edge
+      bgCtx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+      bgCtx.shadowBlur = 10;
+      bgCtx.shadowOffsetY = 4;
+
+      // Realistic white deckled paper fiber highlight line
+      bgCtx.beginPath();
+      bgCtx.moveTo(edgePoints[0].x, edgePoints[0].y);
+      for (let i = 1; i < edgePoints.length; i++) {
+        bgCtx.lineTo(edgePoints[i].x, edgePoints[i].y);
+      }
+      bgCtx.strokeStyle = '#ffffff';
+      bgCtx.lineWidth = 2.4;
+      bgCtx.stroke();
+      bgCtx.restore();
+    }
+
+    // Render App List
+    function renderAppList() {
+      appList.innerHTML = '';
+      const query = searchQuery.trim().toLowerCase();
+
+      // Case 1: Search query active
+      if (query) {
+        const apps = APPS_DATA.filter(a =>
+          a.name.toLowerCase().includes(query) || a.pkg.toLowerCase().includes(query)
+        );
+        if (apps.length === 0) {
+          const empty = document.createElement('div');
+          empty.style.color = '#888888';
+          empty.style.padding = '40px 0';
+          empty.style.textAlign = 'center';
+          empty.textContent = `No apps matching "${searchQuery}"`;
+          appList.appendChild(empty);
+          return;
+        }
+        apps.forEach(app => {
+          appList.appendChild(createAppItemElement(app, settings.pinned.includes(app.pkg)));
+        });
+        return;
+      }
+
+      // Case 2: Star '★' selected -> Home Screen (Shows ONLY pinned favorite apps)
+      if (currentSelectedLetter === '★') {
+        if (settings.pinned.length === 0) {
+          const empty = document.createElement('div');
+          empty.style.color = '#888888';
+          empty.style.padding = '40px 0';
+          empty.style.textAlign = 'center';
+          empty.textContent = 'No pinned apps. Slide the A-Z bar on the right to browse apps.';
+          appList.appendChild(empty);
+          return;
+        }
+        settings.pinned.forEach(pkg => {
+          const app = APPS_DATA.find(a => a.pkg === pkg);
+          if (app) {
+            appList.appendChild(createAppItemElement(app, true));
+          }
+        });
+        return;
+      }
+
+      // Case 3: Letter selected (e.g. 'G', 'V') -> Shows ONLY apps starting with that letter
+      const letter = currentSelectedLetter.toUpperCase();
+      const matchingApps = APPS_DATA.filter(a => a.name[0].toUpperCase() === letter);
+
+      // Bold letter header
+      const header = document.createElement('div');
+      header.className = 'section-header';
+      header.textContent = letter;
+      appList.appendChild(header);
+
+      if (matchingApps.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.color = '#77777a';
+        empty.style.padding = '20px 0';
+        empty.textContent = `No apps starting with "${letter}"`;
+        appList.appendChild(empty);
+      } else {
+        matchingApps.forEach(app => {
+          appList.appendChild(createAppItemElement(app, settings.pinned.includes(app.pkg)));
+        });
+      }
+    }
+
+    function createAppItemElement(app, isPinned) {
+      const row = document.createElement('div');
+      row.className = 'app-item';
+      row.id = `app-${app.pkg}`;
+
+      const icon = document.createElement('div');
+      icon.className = 'app-icon';
+      icon.innerHTML = ICONS_SVG[app.iconKey] || ICONS_SVG.generic;
+
+      const title = document.createElement('div');
+      title.className = 'app-title';
+      title.textContent = app.name;
+
+      row.appendChild(icon);
+      row.appendChild(title);
+
+      if (isPinned) {
+        const pin = document.createElement('span');
+        pin.className = 'pin-badge';
+        pin.textContent = '★';
+        row.appendChild(pin);
+      }
+
+      // Intentional Long press (held for 600ms without dragging) for app options (uninstall, info, pin)
+      let pressTimer = null;
+      let startTouchX = 0;
+      let startTouchY = 0;
+      let didMove = false;
+
+      row.addEventListener('touchstart', (e) => {
+        didMove = false;
+        startTouchX = e.touches[0].clientX;
+        startTouchY = e.touches[0].clientY;
+        pressTimer = setTimeout(() => {
+          if (!didMove && !isDragging) {
+            openAppModal(app);
+          }
+        }, 650);
+      }, { passive: true });
+
+      row.addEventListener('touchmove', (e) => {
+        const dx = Math.abs(e.touches[0].clientX - startTouchX);
+        const dy = Math.abs(e.touches[0].clientY - startTouchY);
+        if (dx > 8 || dy > 8) {
+          didMove = true;
+          if (pressTimer) clearTimeout(pressTimer);
+        }
+      }, { passive: true });
+
+      row.addEventListener('touchend', () => {
+        if (pressTimer) clearTimeout(pressTimer);
+      });
+      row.addEventListener('touchcancel', () => {
+        if (pressTimer) clearTimeout(pressTimer);
+      });
+
+      // Desktop mouse support for testing
+      row.addEventListener('mousedown', (e) => {
+        didMove = false;
+        pressTimer = setTimeout(() => {
+          if (!didMove) openAppModal(app);
+        }, 650);
+      });
+      row.addEventListener('mouseup', () => {
+        if (pressTimer) clearTimeout(pressTimer);
+      });
+      row.addEventListener('mouseleave', () => {
+        if (pressTimer) clearTimeout(pressTimer);
+      });
+
+      // Single click: open app immediately
+      row.addEventListener('click', (e) => {
+        if (didMove) return;
+        showToast(`Opening ${app.name}…`);
+      });
+
+      return row;
+    }
+
+    // App Options Sheet
+    const appModal = document.getElementById('app-modal');
+    const btnPinApp = document.getElementById('btn-pin-app');
+    function openAppModal(app) {
+      selectedApp = app;
+      document.getElementById('app-modal-title').textContent = app.name;
+      const isPinned = settings.pinned.includes(app.pkg);
+      btnPinApp.textContent = isPinned ? 'Unpin from Top' : 'Pin to Top';
+      appModal.classList.add('active');
+    }
+    document.getElementById('btn-close-app-modal').addEventListener('click', () => {
+      appModal.classList.remove('active');
+    });
+    btnPinApp.addEventListener('click', () => {
+      if (!selectedApp) return;
+      if (settings.pinned.includes(selectedApp.pkg)) {
+        settings.pinned = settings.pinned.filter(p => p !== selectedApp.pkg);
+      } else {
+        settings.pinned.push(selectedApp.pkg);
+      }
+      appModal.classList.remove('active');
+      renderAppList();
+    });
+    document.getElementById('btn-app-info').addEventListener('click', () => {
+      showToast(`App details: ${selectedApp.name}`);
+      appModal.classList.remove('active');
+    });
+    document.getElementById('btn-uninstall-app').addEventListener('click', () => {
+      showToast(`Uninstall prompt for ${selectedApp.name}`);
+      appModal.classList.remove('active');
+    });
+
+    // Search Toggle
+    document.getElementById('btn-search').addEventListener('click', () => {
+      searchBox.classList.toggle('active');
+      if (searchBox.classList.contains('active')) {
+        searchInput.focus();
+      } else {
+        searchQuery = '';
+        searchInput.value = '';
+        renderAppList();
+      }
+    });
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      renderAppList();
+    });
+
+    // Settings Modal
+    const settingsModal = document.getElementById('settings-modal');
+    document.getElementById('btn-settings').addEventListener('click', (e) => {
+      e.stopPropagation();
+      settingsModal.classList.add('active');
+    });
+    settingsModal.addEventListener('click', (e) => {
+      if (e.target === settingsModal) {
+        settingsModal.classList.remove('active');
+      }
+    });
+    document.getElementById('btn-close-settings').addEventListener('click', () => {
+      settingsModal.classList.remove('active');
+    });
+    document.getElementById('btn-set-default').addEventListener('click', () => {
+      showToast('Set as Default Home Launcher');
+      settingsModal.classList.remove('active');
+    });
+    document.getElementById('btn-default-badge').addEventListener('click', () => {
+      // Tap home badge to return to favorites
+      currentSelectedLetter = '★';
+      renderAppList();
+    });
+
+    document.getElementById('clock-container').addEventListener('click', () => {
+      // Tap clock to return to home favorites
+      currentSelectedLetter = '★';
+      renderAppList();
+    });
+
+    function setupPills(containerId, onSelect) {
+      const pillBox = document.getElementById(containerId);
+      const pills = pillBox.querySelectorAll('.pill');
+      pills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          pills.forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+          onSelect(pill);
+        });
+      });
+    }
+
+    setupPills('pills-wallpaper', (p) => {
+      settings.wallpaperStyle = p.dataset.style;
+      renderBackground();
+    });
+
+    setupPills('pills-height', (p) => {
+      settings.railHeight = p.dataset.height;
+    });
+
+    setupPills('pills-intensity', (p) => {
+      settings.intensity = p.dataset.intensity;
+    });
+
+    // ==========================================
+    // SHORTER ALPHABET SLIDE BAR & FLUID LENS
+    // ==========================================
+    let canvasW = 0;
+    let canvasH = 0;
+    function resizeCanvas() {
+      const rect = container.getBoundingClientRect();
+      canvasW = rect.width;
+      canvasH = rect.height;
+      canvas.width = canvasW * window.devicePixelRatio;
+      canvas.height = canvasH * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      renderBackground();
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    const fluidState = {
+      isActive: false,
+      expansion: 0,
+      targetExpansion: 0,
+      touchX: 0,
+      touchY: 0,
+      smoothedY: 0,
+      velocityY: 0,
+      smoothedVelocityY: 0,
+      selectedIndex: 0,
+      lastItem: null,
+      wobble: 0,
+      prevDy: 0,
+      springBackDisplacement: 0
+    };
+
+    let isDragging = false;
+    let dragStartY = 0;
+    let lastY = 0;
+    let lastTime = 0;
+
+    function getRailBounds() {
+      // Shorter in height slide bar (screenshot 2 & 3: ~52% screen height, vertically centered on right)
+      const isCompact = settings.railHeight === 'compact';
+      const railH = isCompact ? canvasH * 0.52 : canvasH * 0.78;
+      const railTop = isCompact ? ((canvasH - railH) / 2 + (canvasH * 0.05)) : 70;
+      return { railTop, railH };
+    }
+
+    function updateLetterSelection(y) {
+      const { railTop, railH } = getRailBounds();
+      // Smoothly map finger Y position to alphabet index
+      const effectiveY = (fluidState.smoothedY || y) + (fluidState.springBackDisplacement || 0);
+      const norm = Math.max(0, Math.min(1, (effectiveY - railTop) / railH));
+      const idx = norm * (ALPHABET_ITEMS.length - 1);
+      fluidState.selectedIndex = idx;
+
+      const nearest = Math.round(idx);
+      const item = ALPHABET_ITEMS[nearest];
+      if (item !== fluidState.lastItem) {
+        fluidState.lastItem = item;
+        playHapticTick();
+        currentSelectedLetter = item;
+        renderAppList();
+      }
+    }
+
+    function handleStart(x, y) {
+      isDragging = true;
+      dragStartY = y;
+      lastY = y;
+      lastTime = performance.now();
+      fluidState.touchX = x;
+      fluidState.touchY = y;
+      fluidState.smoothedY = y;
+      fluidState.velocityY = 0;
+      fluidState.smoothedVelocityY = 0;
+      fluidState.prevDy = 0;
+      fluidState.springBackDisplacement = 0;
+
+      // If user directly touches the right edge (within 85px of right edge) BELOW the header,
+      // activate the fluid slider IMMEDIATELY with zero threshold!
+      const headerEl = document.getElementById('header-card');
+      const headerH = headerEl ? headerEl.offsetHeight : 140;
+      if (y > headerH && x >= canvasW - 85) {
+        fluidState.isActive = true;
+        fluidState.targetExpansion = 1;
+        updateLetterSelection(y);
+      }
+    }
+
+    function handleMove(x, y) {
+      if (!isDragging) return;
+      const now = performance.now();
+      const dt = Math.max(1, now - lastTime) / 1000;
+      const dy = y - lastY;
+      lastY = y;
+      lastTime = now;
+
+      if (!fluidState.isActive) {
+        // Activate if dragged vertically or if on the right strip
+        if (Math.abs(y - dragStartY) > 5 || x >= canvasW - 85) {
+          fluidState.isActive = true;
+          fluidState.targetExpansion = 1;
+        }
+      }
+
+      if (fluidState.isActive) {
+        fluidState.touchX = x;
+        fluidState.touchY = y;
+
+        // Direction reversal detection:
+        // When finger changes direction rapidly, apply an instantaneous spring-back compensation
+        // and a responsive tracking factor so the fluid curve immediately snaps and does NOT lag or stick.
+        const prevDy = fluidState.prevDy;
+        const isDirectionReversal = (dy > 1.5 && prevDy < -1.5) || (dy < -1.5 && prevDy > 1.5);
+
+        if (isDirectionReversal) {
+          // Instant spring-back: nullify opposite drag inertia
+          fluidState.smoothedVelocityY = dy * 30;
+          fluidState.springBackDisplacement = -prevDy * 0.45;
+          // Snap smoothedY closer immediately to prevent sticking
+          fluidState.smoothedY += (y - fluidState.smoothedY) * 0.85;
+        } else {
+          // Decay spring back
+          fluidState.springBackDisplacement *= 0.65;
+          // Fast responsive convergence
+          fluidState.smoothedY += (y - fluidState.smoothedY) * 0.60;
+        }
+
+        if (dy !== 0) {
+          fluidState.prevDy = dy;
+        }
+
+        fluidState.velocityY = dy / dt;
+        fluidState.smoothedVelocityY += (fluidState.velocityY - fluidState.smoothedVelocityY) * 0.45;
+        fluidState.wobble += 0.15;
+
+        updateLetterSelection(y);
+      }
+    }
+
+    function handleEnd() {
+      isDragging = false;
+      fluidState.isActive = false;
+      fluidState.targetExpansion = 0;
+      fluidState.lastItem = null;
+      fluidState.prevDy = 0;
+      fluidState.springBackDisplacement = 0;
+      // Notice: currentSelectedLetter stays intact when lifting finger!
+      // The user can now calmly tap or long-press any app shown for that letter.
+    }
+
+    function scrollToLetter(char) {
+      const header = document.getElementById(`section-${char}`);
+      if (header) {
+        header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    // Touch events on container - non-passive with preventDefault on slider to stop browser gesture interference
+    container.addEventListener('touchstart', (e) => {
+      // If user tapped a button or inside the header card / modals, do not intercept or preventDefault!
+      if (e.target.closest('#header-card') || e.target.closest('.modal-overlay') || e.target.closest('button')) {
+        return;
+      }
+
+      const t = e.touches[0];
+      const r = container.getBoundingClientRect();
+      const touchX = t.clientX - r.left;
+      const touchY = t.clientY - r.top;
+
+      // Only intercept touch for alphabet slider if BELOW the header area
+      const headerEl = document.getElementById('header-card');
+      const headerH = headerEl ? headerEl.offsetHeight : 140;
+
+      if (touchY > headerH && touchX >= canvasW - 85) {
+        e.preventDefault();
+      }
+      handleStart(touchX, touchY);
+    }, { passive: false });
+
+    container.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      const t = e.touches[0];
+      const r = container.getBoundingClientRect();
+      const touchX = t.clientX - r.left;
+      const touchY = t.clientY - r.top;
+      if (fluidState.isActive || touchX >= canvasW - 85) {
+        e.preventDefault();
+      }
+      handleMove(touchX, touchY);
+    }, { passive: false });
+
+    container.addEventListener('touchend', (e) => {
+      if (isDragging) {
+        handleEnd();
+      }
+    });
+    container.addEventListener('touchcancel', (e) => {
+      if (isDragging) {
+        handleEnd();
+      }
+    });
+
+    // Mouse drag for desktop
+    container.addEventListener('mousedown', (e) => {
+      if (e.target.closest('#header-card') || e.target.closest('.modal-overlay') || e.target.closest('button')) {
+        return;
+      }
+      const r = container.getBoundingClientRect();
+      handleStart(e.clientX - r.left, e.clientY - r.top);
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        const r = container.getBoundingClientRect();
+        handleMove(e.clientX - r.left, e.clientY - r.top);
+      }
+    });
+    window.addEventListener('mouseup', () => {
+      if (isDragging) handleEnd();
+    });
+
+    // Animation Loop
+    function animate() {
+      requestAnimationFrame(animate);
+
+      fluidState.expansion += (fluidState.targetExpansion - fluidState.expansion) * 0.24;
+
+      ctx.clearRect(0, 0, canvasW, canvasH);
+
+      const railEdgeX = canvasW;
+      const railBaseX = canvasW - 18;
+
+      const intensityMult = settings.intensity === 'low' ? 0.75 : (settings.intensity === 'high' ? 1.35 : 1.0);
+      const exp = fluidState.expansion;
+
+      const { railTop, railH } = getRailBounds();
+      const totalItems = ALPHABET_ITEMS.length;
+      const stepY = railH / (totalItems - 1);
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      // Draw Alphabet Characters with fluid curve & active bubble
+      for (let i = 0; i < totalItems; i++) {
+        const char = ALPHABET_ITEMS[i];
+        const defaultY = railTop + i * stepY;
+        const indexDist = Math.abs(fluidState.selectedIndex - i);
+
+        // Bulge factor when near thumb
+        let bulge = 0;
+        if (exp > 0.01 && indexDist < 5.0) {
+          const prox = Math.max(0, 1 - indexDist / 5.0);
+          bulge = prox * prox * (3 - 2 * prox);
+        }
+
+        // Horizontal displacement pulling toward screen center (like screenshot 2 & 3)
+        const maxDisp = 48 * intensityMult * exp;
+        const letterX = railBaseX - (bulge * maxDisp);
+        const letterY = defaultY;
+
+        const isSelected = indexDist < 0.6 && fluidState.isActive;
+        const scale = exp > 0.01 ? (1 + bulge * 0.45) : 1;
+
+        let alpha = 0.45;
+        if (fluidState.isActive) {
+          if (indexDist < 0.6) alpha = 1.0;
+          else if (indexDist < 2.5) alpha = 0.85;
+          else if (indexDist < 5.0) alpha = 0.55;
+          else alpha = 0.22;
+        }
+
+        // Active Magnifying Lens Bubble [ V ] (Screenshot 2 & 3)
+        if (isSelected && exp > 0.35) {
+          const bubbleRadius = 34;
+          const bubbleX = letterX - 56;
+          const bubbleY = letterY;
+
+          // Shadow
+          ctx.beginPath();
+          ctx.arc(bubbleX, bubbleY + 4, bubbleRadius + 2, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+          ctx.fill();
+
+          // Dark circle fill (screenshot 2 & 3)
+          ctx.beginPath();
+          ctx.arc(bubbleX, bubbleY, bubbleRadius, 0, Math.PI * 2);
+          ctx.fillStyle = '#000000';
+          ctx.fill();
+
+          // White outline border
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2.4;
+          ctx.stroke();
+
+          // Bold white character inside bubble
+          ctx.font = 'bold 28px sans-serif';
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(char, bubbleX, bubbleY);
+        }
+
+        // Draw character along the rail
+        ctx.font = `${isSelected ? 'bold ' : 'normal '}${Math.round(11 * scale)}px sans-serif`;
+        ctx.fillStyle = isSelected ? '#ffffff' : (bulge > 0.1 ? '#ffffff' : `rgba(220, 220, 225, ${alpha})`);
+        ctx.fillText(char, letterX, letterY);
+      }
+    }
+
+    resizeCanvas();
+    renderAppList();
+    animate();
+  </script>
+</body>
+</html>
