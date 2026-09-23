@@ -238,6 +238,7 @@ fun HomeScreen(
                 PaperTearHeader(
                     showClock = preferences.showClock,
                     showDate = preferences.showDate,
+                    use24HourFormat = preferences.use24HourFormat,
                     paperTearStyle = preferences.paperTearStyle,
                     searchQuery = searchQuery,
                     onSearchQueryChange = { viewModel.setSearchQuery(it) },
@@ -401,6 +402,7 @@ fun HomeScreen(
             onSetHaptics = { viewModel.setHapticFeedback(it) },
             onSetShowClock = { viewModel.setShowClock(it) },
             onSetShowDate = { viewModel.setShowDate(it) },
+            onSetUse24HourFormat = { viewModel.setUse24HourFormat(it) },
             onSetMonochromeIcons = { viewModel.setMonochromeIcons(it) },
             onSetPaperTearStyle = { viewModel.setPaperTearStyle(it) },
             onSetDefaultLauncher = {

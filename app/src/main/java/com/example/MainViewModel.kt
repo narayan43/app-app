@@ -156,6 +156,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setHapticFeedback(enabled: Boolean) = preferencesRepository.setHapticFeedback(enabled)
     fun setShowClock(show: Boolean) = preferencesRepository.setShowClock(show)
     fun setShowDate(show: Boolean) = preferencesRepository.setShowDate(show)
+    fun setUse24HourFormat(use24Hour: Boolean) = preferencesRepository.setUse24HourFormat(use24Hour)
     fun setMonochromeIcons(enabled: Boolean) = preferencesRepository.setMonochromeIcons(enabled)
     fun setPaperTearStyle(style: PaperTearStyle) = preferencesRepository.setPaperTearStyle(style)
 

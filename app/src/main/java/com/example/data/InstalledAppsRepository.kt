@@ -57,16 +57,20 @@ class InstalledAppsRepository(
     }
 
     private fun registerPackageReceiver() {
-        val filter = IntentFilter().apply {
-            addAction(Intent.ACTION_PACKAGE_ADDED)
-            addAction(Intent.ACTION_PACKAGE_REMOVED)
-            addAction(Intent.ACTION_PACKAGE_CHANGED)
-            addDataScheme("package")
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(packageReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
-        } else {
-            context.registerReceiver(packageReceiver, filter)
+        try {
+            val filter = IntentFilter().apply {
+                addAction(Intent.ACTION_PACKAGE_ADDED)
+                addAction(Intent.ACTION_PACKAGE_REMOVED)
+                addAction(Intent.ACTION_PACKAGE_CHANGED)
+                addDataScheme("package")
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(packageReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                context.registerReceiver(packageReceiver, filter)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error registering package receiver", e)
         }
     }
 
@@ -107,54 +111,66 @@ class InstalledAppsRepository(
         }
 
         val myPackageName = context.packageName
-
         val list = mutableListOf<AppItem>()
+
         for (info in resolveInfos) {
-            val pkg = info.activityInfo?.packageName ?: continue
-            val activityName = info.activityInfo?.name ?: ""
+            try {
+                val pkg = info.activityInfo?.packageName ?: continue
+                val activityName = info.activityInfo?.name ?: ""
 
-            // Don't show the launcher itself in its own app drawer
-            if (pkg == myPackageName) continue
+                // Don't show the launcher itself in its own app drawer
+                if (pkg == myPackageName) continue
 
-            val label = try {
-                info.loadLabel(packageManager).toString().trim().ifBlank {
-                    info.activityInfo?.name?.substringAfterLast('.') ?: pkg
+                val label = try {
+                    info.loadLabel(packageManager).toString().trim().ifBlank {
+                        info.activityInfo?.name?.substringAfterLast('.') ?: pkg
+                    }
+                } catch (_: Exception) {
+                    pkg
                 }
-            } catch (_: Exception) {
-                pkg
-            }
 
-            val firstLetter = label.firstOrNull()?.uppercaseChar() ?: '#'
-            val normalizedChar = if (firstLetter in 'A'..'Z') firstLetter else '#'
+                val firstLetter = label.firstOrNull()?.uppercaseChar() ?: '#'
+                val normalizedChar = if (firstLetter in 'A'..'Z') firstLetter else '#'
 
-            // Load and cache icon
-            val icon = getOrLoadIcon(pkg, info)
+                // Load and cache icon safely
+                val icon = try {
+                    getOrLoadIcon(pkg, info)
+                } catch (e: Throwable) {
+                    null
+                }
 
-            val installTime = try {
-                val pkgInfo = packageManager.getPackageInfo(pkg, 0)
-                pkgInfo.firstInstallTime
-            } catch (_: Exception) {
-                0L
-            }
+                val installTime = try {
+                    val pkgInfo = packageManager.getPackageInfo(pkg, 0)
+                    pkgInfo.firstInstallTime
+                } catch (_: Exception) {
+                    0L
+                }
 
-            list.add(
-                AppItem(
-                    packageName = pkg,
-                    activityName = activityName,
-                    label = label,
-                    icon = icon,
-                    firstChar = normalizedChar,
-                    installTime = installTime
+                list.add(
+                    AppItem(
+                        packageName = pkg,
+                        activityName = activityName,
+                        label = label,
+                        icon = icon,
+                        firstChar = normalizedChar,
+                        installTime = installTime
+                    )
                 )
-            )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error processing app info", e)
+            }
         }
 
         // Sort alphabetically by label ignoring case
-        return list.sortedWith(
-            compareBy<AppItem> {
-                if (it.firstChar == '#') "zzzz" else it.firstChar.toString()
-            }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.label }
-        )
+        return try {
+            list.sortedWith(
+                compareBy<AppItem> {
+                    if (it.firstChar == '#') "zzzz" else it.firstChar.toString()
+                }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.label }
+            )
+        } catch (e: Exception) {
+            list
+        }
     }
 
     private fun getOrLoadIcon(packageName: String, info: ResolveInfo): ImageBitmap? {
@@ -180,12 +196,14 @@ class InstalledAppsRepository(
         if (drawable == null) return null
         val size = 96
         return try {
-            val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+            val width = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth.coerceIn(48, 192) else size
+            val height = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight.coerceIn(48, 192) else size
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bitmap)
             drawable.setBounds(0, 0, canvas.width, canvas.height)
             drawable.draw(canvas)
             bitmap
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Log.e(TAG, "Error converting drawable to bitmap", e)
             null
         }

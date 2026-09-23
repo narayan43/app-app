@@ -54,6 +54,7 @@ import java.util.Locale
 fun PaperTearHeader(
     showClock: Boolean,
     showDate: Boolean,
+    use24HourFormat: Boolean = false,
     paperTearStyle: PaperTearStyle,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
@@ -70,8 +71,9 @@ fun PaperTearHeader(
     var currentDayAbbr by remember { mutableStateOf("MON") }
     var currentDate by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) {
-        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+    LaunchedEffect(use24HourFormat) {
+        val pattern = if (use24HourFormat) "HH:mm" else "h:mm"
+        val timeFormat = SimpleDateFormat(pattern, Locale.getDefault())
         val dayFormat = SimpleDateFormat("EEE", Locale.getDefault())
         val dateFormat = SimpleDateFormat("EEEE, MMMM d", Locale.getDefault())
         while (true) {

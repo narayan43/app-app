@@ -41,6 +41,7 @@ data class LauncherPreferences(
     val hapticFeedbackEnabled: Boolean = true,
     val showClock: Boolean = true,
     val showDate: Boolean = true,
+    val use24HourFormat: Boolean = false,
     val monochromeIcons: Boolean = true,
     val paperTearStyle: PaperTearStyle = PaperTearStyle.CLEAN_FLAT,
     val pinnedPackages: Set<String> = emptySet(),

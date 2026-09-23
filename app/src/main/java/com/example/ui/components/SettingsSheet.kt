@@ -58,6 +58,7 @@ fun SettingsSheet(
     onSetHaptics: (Boolean) -> Unit,
     onSetShowClock: (Boolean) -> Unit,
     onSetShowDate: (Boolean) -> Unit,
+    onSetUse24HourFormat: (Boolean) -> Unit,
     onSetMonochromeIcons: (Boolean) -> Unit,
     onSetPaperTearStyle: (PaperTearStyle) -> Unit,
     onSetDefaultLauncher: () -> Unit,
@@ -281,6 +282,15 @@ fun SettingsSheet(
                 checked = preferences.showClock,
                 onCheckedChange = onSetShowClock
             )
+
+            if (preferences.showClock) {
+                ToggleRow(
+                    title = "24-Hour Time Format",
+                    description = "Switch between 12-hour (e.g. 3:45) and 24-hour (15:45)",
+                    checked = preferences.use24HourFormat,
+                    onCheckedChange = onSetUse24HourFormat
+                )
+            }
 
             ToggleRow(
                 title = "Show Date",

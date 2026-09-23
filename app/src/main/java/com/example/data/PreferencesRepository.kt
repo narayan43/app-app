@@ -34,6 +34,7 @@ class PreferencesRepository(context: Context) {
         val haptics = prefs.getBoolean(KEY_HAPTICS, true)
         val showClock = prefs.getBoolean(KEY_SHOW_CLOCK, true)
         val showDate = prefs.getBoolean(KEY_SHOW_DATE, true)
+        val use24Hour = prefs.getBoolean(KEY_USE_24_HOUR, false)
         val monochrome = prefs.getBoolean(KEY_MONOCHROME, true)
         val pinned = prefs.getStringSet(KEY_PINNED, emptySet()) ?: emptySet()
         val onboarding = prefs.getBoolean(KEY_ONBOARDING, false)
@@ -46,6 +47,7 @@ class PreferencesRepository(context: Context) {
             hapticFeedbackEnabled = haptics,
             showClock = showClock,
             showDate = showDate,
+            use24HourFormat = use24Hour,
             monochromeIcons = monochrome,
             paperTearStyle = paperTearStyle,
             pinnedPackages = pinned,
@@ -88,6 +90,11 @@ class PreferencesRepository(context: Context) {
         _preferences.value = _preferences.value.copy(showDate = show)
     }
 
+    fun setUse24HourFormat(use24Hour: Boolean) {
+        prefs.edit().putBoolean(KEY_USE_24_HOUR, use24Hour).apply()
+        _preferences.value = _preferences.value.copy(use24HourFormat = use24Hour)
+    }
+
     fun setMonochromeIcons(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_MONOCHROME, enabled).apply()
         _preferences.value = _preferences.value.copy(monochromeIcons = enabled)
@@ -122,6 +129,7 @@ class PreferencesRepository(context: Context) {
         private const val KEY_HAPTICS = "haptic_feedback"
         private const val KEY_SHOW_CLOCK = "show_clock"
         private const val KEY_SHOW_DATE = "show_date"
+        private const val KEY_USE_24_HOUR = "use_24_hour_format"
         private const val KEY_MONOCHROME = "monochrome_icons"
         private const val KEY_PAPER_TEAR = "paper_tear_style"
         private const val KEY_PINNED = "pinned_packages"
