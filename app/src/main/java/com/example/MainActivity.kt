@@ -33,17 +33,20 @@ class MainActivity : ComponentActivity() {
             }
 
             // Back button behavior for Home Launcher:
-            // If search is active or dialogs are open, close them;
-            // Otherwise, don't exit the launcher.
+            // ALWAYS keep BackHandler enabled so the launcher NEVER finishes or lets Android kill the home activity.
+            // If search is active or dialogs are open, close them; otherwise do nothing (absorb the back press).
             val isSearchActive by viewModel.isSearchActive.collectAsState()
             val isSettingsOpen by viewModel.isSettingsOpen.collectAsState()
             val selectedApp by viewModel.selectedAppForOptions.collectAsState()
 
-            BackHandler(enabled = isSearchActive || isSettingsOpen || selectedApp != null) {
+            BackHandler(enabled = true) {
                 when {
                     selectedApp != null -> viewModel.closeAppOptions()
                     isSettingsOpen -> viewModel.closeSettings()
                     isSearchActive -> viewModel.toggleSearch(false)
+                    else -> {
+                        // Home launcher absorbs back button so ColorOS / Android never finishes Home activity
+                    }
                 }
             }
 

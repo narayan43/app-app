@@ -10,4 +10,7 @@ data class AppItem(
     val firstChar: Char = '#',
     val isPinned: Boolean = false,
     val installTime: Long = 0L
-)
+) {
+    val uniqueKey: String
+        get() = if (activityName.isNotEmpty()) "$packageName/$activityName" else packageName
+}

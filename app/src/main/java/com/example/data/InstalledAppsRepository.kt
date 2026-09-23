@@ -83,107 +83,171 @@ class InstalledAppsRepository(
     fun loadApps() {
         scope.launch {
             _isLoading.value = true
-            val apps = withContext(Dispatchers.IO) {
-                queryAndProcessApps()
+            // Phase 1: Fast query without icons to paint the UI immediately and avoid any OOM or launch timeouts
+            val appsWithoutIcons = withContext(Dispatchers.IO) {
+                queryFastApps()
             }
-            _installedApps.value = apps
+
+            if (appsWithoutIcons.isNotEmpty()) {
+                _installedApps.value = appsWithoutIcons
+                _isLoading.value = false
+            }
+
+            // Phase 2: Asynchronously load icons in background without blocking the first frame
+            val appsWithIcons = withContext(Dispatchers.IO) {
+                loadIconsForApps(appsWithoutIcons)
+            }
+
+            if (appsWithIcons.isNotEmpty()) {
+                _installedApps.value = appsWithIcons
+            }
             _isLoading.value = false
         }
     }
 
-    private fun queryAndProcessApps(): List<AppItem> {
-        val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
-            addCategory(Intent.CATEGORY_LAUNCHER)
-        }
-
-        val resolveInfos: List<ResolveInfo> = try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                packageManager.queryIntentActivities(
-                    mainIntent,
-                    PackageManager.ResolveInfoFlags.of(0L)
-                )
-            } else {
-                packageManager.queryIntentActivities(mainIntent, 0)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error querying launcher intents", e)
-            emptyList()
-        }
-
-        val myPackageName = context.packageName
+    private fun queryFastApps(): List<AppItem> {
         val list = mutableListOf<AppItem>()
+        val myPackageName = context.packageName
 
-        for (info in resolveInfos) {
-            try {
-                val pkg = info.activityInfo?.packageName ?: continue
-                val activityName = info.activityInfo?.name ?: ""
+        try {
+            val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
+                addCategory(Intent.CATEGORY_LAUNCHER)
+            }
 
-                // Don't show the launcher itself in its own app drawer
-                if (pkg == myPackageName) continue
-
-                val label = try {
-                    info.loadLabel(packageManager).toString().trim().ifBlank {
-                        info.activityInfo?.name?.substringAfterLast('.') ?: pkg
-                    }
-                } catch (_: Exception) {
-                    pkg
-                }
-
-                val firstLetter = label.firstOrNull()?.uppercaseChar() ?: '#'
-                val normalizedChar = if (firstLetter in 'A'..'Z') firstLetter else '#'
-
-                // Load and cache icon safely
-                val icon = try {
-                    getOrLoadIcon(pkg, info)
-                } catch (e: Throwable) {
-                    null
-                }
-
-                val installTime = try {
-                    val pkgInfo = packageManager.getPackageInfo(pkg, 0)
-                    pkgInfo.firstInstallTime
-                } catch (_: Exception) {
-                    0L
-                }
-
-                list.add(
-                    AppItem(
-                        packageName = pkg,
-                        activityName = activityName,
-                        label = label,
-                        icon = icon,
-                        firstChar = normalizedChar,
-                        installTime = installTime
+            val resolveInfos: List<ResolveInfo> = try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    packageManager.queryIntentActivities(
+                        mainIntent,
+                        PackageManager.ResolveInfoFlags.of(0L)
                     )
-                )
-            } catch (e: Exception) {
-                Log.e(TAG, "Error processing app info", e)
+                } else {
+                    packageManager.queryIntentActivities(mainIntent, 0)
+                }
+            } catch (e: Throwable) {
+                Log.e(TAG, "Error querying launcher intents", e)
+                emptyList()
+            }
+
+            for (info in resolveInfos) {
+                try {
+                    val pkg = info.activityInfo?.packageName ?: continue
+                    val activityName = info.activityInfo?.name ?: ""
+
+                    if (pkg == myPackageName) continue
+
+                    val label = try {
+                        info.loadLabel(packageManager).toString().trim().ifBlank {
+                            info.activityInfo?.name?.substringAfterLast('.') ?: pkg
+                        }
+                    } catch (_: Throwable) {
+                        pkg
+                    }
+
+                    val firstLetter = label.firstOrNull()?.uppercaseChar() ?: '#'
+                    val normalizedChar = if (firstLetter in 'A'..'Z') firstLetter else '#'
+
+                    list.add(
+                        AppItem(
+                            packageName = pkg,
+                            activityName = activityName,
+                            label = label,
+                            icon = iconCache[pkg], // Use cached icon if already loaded
+                            firstChar = normalizedChar,
+                            installTime = 0L
+                        )
+                    )
+                } catch (e: Throwable) {
+                    Log.e(TAG, "Error processing app info item", e)
+                }
+            }
+        } catch (e: Throwable) {
+            Log.e(TAG, "General failure in queryFastApps", e)
+        }
+
+        // Fallback: If ColorOS / OEM queryIntentActivities returned nothing, try getInstalledApplications
+        if (list.isEmpty()) {
+            try {
+                val installedApps = packageManager.getInstalledApplications(0)
+                for (appInfo in installedApps) {
+                    try {
+                        val pkg = appInfo.packageName
+                        if (pkg == myPackageName) continue
+                        val launchIntent = packageManager.getLaunchIntentForPackage(pkg) ?: continue
+                        val activityName = launchIntent.component?.className ?: ""
+                        val label = try {
+                            appInfo.loadLabel(packageManager).toString().trim().ifBlank { pkg }
+                        } catch (_: Throwable) {
+                            pkg
+                        }
+                        val firstLetter = label.firstOrNull()?.uppercaseChar() ?: '#'
+                        val normalizedChar = if (firstLetter in 'A'..'Z') firstLetter else '#'
+
+                        list.add(
+                            AppItem(
+                                packageName = pkg,
+                                activityName = activityName,
+                                label = label,
+                                icon = iconCache[pkg],
+                                firstChar = normalizedChar,
+                                installTime = 0L
+                            )
+                        )
+                    } catch (_: Throwable) {}
+                }
+            } catch (e: Throwable) {
+                Log.e(TAG, "Fallback query failed", e)
             }
         }
 
-        // Sort alphabetically by label ignoring case
+        // Guaranteed fallback so launcher never has an empty list and remains alive
+        if (list.isEmpty()) {
+            list.add(
+                AppItem(
+                    packageName = "com.android.settings",
+                    activityName = "com.android.settings.Settings",
+                    label = "Settings",
+                    icon = null,
+                    firstChar = 'S',
+                    installTime = 0L
+                )
+            )
+        }
+
         return try {
             list.sortedWith(
                 compareBy<AppItem> {
                     if (it.firstChar == '#') "zzzz" else it.firstChar.toString()
                 }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.label }
             )
-        } catch (e: Exception) {
+        } catch (_: Throwable) {
             list
         }
     }
 
-    private fun getOrLoadIcon(packageName: String, info: ResolveInfo): ImageBitmap? {
+    private fun loadIconsForApps(apps: List<AppItem>): List<AppItem> {
+        val updatedList = mutableListOf<AppItem>()
+        for (app in apps) {
+            try {
+                val icon = if (app.icon != null) {
+                    app.icon
+                } else {
+                    getOrLoadIcon(app.packageName)
+                }
+                updatedList.add(app.copy(icon = icon))
+            } catch (e: Throwable) {
+                updatedList.add(app)
+            }
+        }
+        return updatedList
+    }
+
+    private fun getOrLoadIcon(packageName: String): ImageBitmap? {
         iconCache[packageName]?.let { return it }
 
         val drawable: Drawable? = try {
-            info.loadIcon(packageManager)
-        } catch (_: Exception) {
-            try {
-                packageManager.getApplicationIcon(packageName)
-            } catch (_: Exception) {
-                null
-            }
+            packageManager.getApplicationIcon(packageName)
+        } catch (_: Throwable) {
+            null
         }
 
         val bitmap = drawableToBitmap(drawable) ?: return null

@@ -309,7 +309,7 @@ fun HomeScreen(
                             }
                             itemsIndexed(
                                 items = pinnedApps,
-                                key = { _, app -> "home_pinned_${app.packageName}" }
+                                key = { _, app -> "home_pinned_${app.uniqueKey}" }
                             ) { _, app ->
                                 AppListItem(
                                     app = app,
@@ -345,10 +345,10 @@ fun HomeScreen(
                             }
                         }
 
-                        // Display all apps (or search / letter filtered list)
+                        // Display all apps (or search / letter filtered list) with strictly unique keys
                         for (i in filteredApps.indices) {
                             val app = filteredApps[i]
-                            item(key = "app_${app.packageName}") {
+                            item(key = "app_${app.uniqueKey}") {
                                 AppListItem(
                                     app = app,
                                     isMonochrome = preferences.monochromeIcons,
