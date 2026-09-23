@@ -1,5 +1,6 @@
 # Flow Launcher 🌊
 ### Minimalist Android Home Launcher with Fluid Liquid Alphabet Interaction
+<!-- Trigger sync build -->
 
 **Flow Launcher** is a modern, high-performance Android application built with **Jetpack Compose**, **Kotlin Coroutines**, and **Material Design 3**. It offers a distraction-free home screen experience featuring an interactive, fluid liquid alphabet rail with dynamic wave distortion, haptic feedback, OLED dark mode, and instant application search.
 
